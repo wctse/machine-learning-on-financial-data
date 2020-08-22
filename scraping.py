@@ -16,16 +16,21 @@ def update_from_investing_com(data: pd.DataFrame,
                               investing_address: str,
                               end_date: date = date.today()):
     """
+    Takes a dataframe with parsed format (after reformat_investing_data()) and updates its data.
+    Assumes the last row is the latest data for the dataframe.
 
-    :param data: Pandas dataframe. The data to be updated.
-    :param investing_address: String of url. The url of the product on investing.com.
-    :param end_date: Date. Default today. The last day of data to update for the dataframe.
-    :return: An updated pandas dataframe (planned).
+    Args:
+        data: Pandas dataframe. The data to be updated.
+        investing_address: String of url. The url of the product on investing.com.
+        end_date: Date. Default today. The last day of data to update for the dataframe.
+
+    Returns:
+        An updated pandas dataframe.
 
     TODO: Complete the function.
     """
 
-    r = Request('https://www.investing.com/indices/hong-kong-40-futures-historical-data',
+    r = Request(investing_address,
                 headers={"User-Agent": "Mozilla/5.0"})
     c = urlopen(r).read()
     soup = bs(c, 'html.parser')
@@ -38,27 +43,42 @@ def update_from_investing_com(data: pd.DataFrame,
     values = [values[x:x + 6] for x in range(0, len(values), 6)]
     pd.DataFrame(values).set_index(0)
 
+    last_date = data.iloc[-1]
+
 
 def download_from_investing_com(
-        download_directory: str,
         account_email: str,
         account_password: str,
         investing_address: str,
         start_date: date = date(2000, 1, 1),
         end_date: date = date.today(),
         return_download_name: bool = False,
+        download_directory: str = 'default',
         **kwargs):
+
     """
-    :param investing_address: String of url. The url of the product on investing.com.
-    :param start_date: Date of datetime. The starting date of data query, default to be 2000/01/01.
-    :param end_date: Date of datetime. The ending date of data query, default to today and will be automatically converted to the last trading date.
-    :param download_directory: String. The directory to insert the downloaded file. Should be a raw string to accommodate backslash.
-    :param return_download_name: Boolean. If the function returns the name of the downloaded file. Default to be false to save processing time.
-    :param account_email: String. The investing.com account's email address.
-    :param account_password: String. The investing.com account's password.
-    :return: An empty string if return_download_name is set to false. Returns the downloaded file name if true.
+    Getting price and volume data from investing.com. This should only be used when alternative, easier solutions are
+    not available, e.g. for Hong Kong Hang Seng Futures in yahoo or google apis.
+
+    Args:
+        investing_address: String of url. The url of the product on investing.com.
+        start_date: Date of datetime. The starting date of data query, default to be 2000/01/01.
+        end_date: Date of datetime. The ending date of data query, default to today and will be automatically converted to the last trading date.
+        return_download_name: Boolean. If the function returns the name of the downloaded file. Default to be false to save processing time.
+        account_email: String. The investing.com account's email address.
+        account_password: String. The investing.com account's password.
+        download_directory: String of the directory to insert the downloaded file, or 'default' to download to the default directory. Should be a raw string to accommodate backslash.
+
+    Returns:
+        An empty string if return_download_name is set to false. Returns the downloaded file name if true.
+
+    Examples:
+        download_from_investing_com(investing_address='https://www.investing.com/indices/hong-kong-40-futures-historical-data',
+                                    account_email='example@gmail.com', account_password='passw0rd',
+                                    download_directory=r'C:\Users\my_user\Desktop\New_Folder\\')
 
     TODO: Convert the investing_address variable into stock tickers or stock numbers.
+          Check the validity of parameters.
     """
 
     download_name = ''
@@ -70,13 +90,20 @@ def download_from_investing_com(
         is_end_date_changed = True
 
     options = ChromeOptions()
-    options.add_experimental_option('prefs', {
-        'download.default_directory': download_directory,
-        'download.prompt_for_download': False,
-        'download.directory_upgrade': True,
-    })
 
-    # Initiate the chromium session and direct to the html provided
+    if download_directory == 'default':
+        options.add_experimental_option('prefs', {
+            'download.prompt_for_download': False,
+            'download.directory_upgrade': True,
+        })
+    else:
+        options.add_experimental_option('prefs', {
+            'download.default_directory': download_directory,
+            'download.prompt_for_download': False,
+            'download.directory_upgrade': True,
+        })
+
+    # Initialize the chromium session and direct to the html provided
     driver = webdriver.Chrome('chromedriver.exe', chrome_options=options)
     driver.get(investing_address)
 
@@ -174,12 +201,15 @@ def reformat_investing_com_data(data: pd.DataFrame,
                                 **kwargs):
     """
     This function reformat data from investing.com and makes it suitable for analysis.
-    :param save_name:
-    :param data: Pandas dataframe. The data to feed into the project.
-    :param drop_volume: Boolean. Default True. If the column "Vol." should be dropped.
-    :param save_csv: Boolean. If the data is to be saved as csv.
-    :param save_name: String. The file name of data to save as. Only used when save_csv is set to True.
-    :return: The reformatted dataframe.
+
+    Args:
+        data: Pandas dataframe. The data to feed into the project.
+        drop_volume: Boolean. Default True. If the column "Vol." should be dropped.
+        save_csv: Boolean. If the data is to be saved as csv.
+        save_name: String. The file name of data to save as. Only used when save_csv is set to True.
+
+    Returns:
+        The reformatted dataframe.
 
     """
     data = data[data['High'] != data['Low']]
