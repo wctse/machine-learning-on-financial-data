@@ -2,6 +2,15 @@ import pandas as pd
 from time import sleep
 from datetime import date, datetime
 
+from urllib.request import Request, urlopen
+from bs4 import BeautifulSoup as bs
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ChromeOptions
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, \
+    JavascriptException, ElementClickInterceptedException
+
 
 def update_from_investing_com(data: pd.DataFrame,
                               investing_address: str,
@@ -16,9 +25,6 @@ def update_from_investing_com(data: pd.DataFrame,
     TODO: Complete the function.
     """
 
-    from urllib.request import Request, urlopen
-    from bs4 import BeautifulSoup as bs
-
     r = Request('https://www.investing.com/indices/hong-kong-40-futures-historical-data',
                 headers={"User-Agent": "Mozilla/5.0"})
     c = urlopen(r).read()
@@ -31,6 +37,7 @@ def update_from_investing_com(data: pd.DataFrame,
 
     values = [values[x:x + 6] for x in range(0, len(values), 6)]
     pd.DataFrame(values).set_index(0)
+
 
 def download_from_investing_com(
         download_directory: str,
@@ -53,13 +60,6 @@ def download_from_investing_com(
 
     TODO: Convert the investing_address variable into stock tickers or stock numbers.
     """
-
-
-    from selenium import webdriver
-    from selenium.webdriver.common.keys import Keys
-    from selenium.webdriver import ChromeOptions
-    from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException,\
-        JavascriptException, ElementClickInterceptedException
 
     download_name = ''
     start_date = date.strftime(start_date, '%d/%m/%Y')
