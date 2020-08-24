@@ -55,8 +55,7 @@ def download_from_investing_com(
         return_download_name: bool = False,
         download_directory: str = 'default',
         **kwargs):
-
-    """
+    r"""
     Getting price and volume data from investing.com. This should only be used when alternative, easier solutions are
     not available, e.g. for Hong Kong Hang Seng Futures in yahoo or google apis.
 
@@ -211,6 +210,7 @@ def reformat_investing_com_data(data: pd.DataFrame,
     Returns:
         The reformatted dataframe.
 
+    TODO: Resolve SettingWithCopyWarning
     """
     data = data[data['High'] != data['Low']]
 
@@ -223,10 +223,15 @@ def reformat_investing_com_data(data: pd.DataFrame,
     data = data[::-1]
 
     data.index = data.index.map(lambda x: datetime.strptime(x, '%b %d, %Y').strftime('%Y-%m-%d'))
+    data.index = pd.to_datetime(data.index)
+
     data[['Close', 'Open', 'High', 'Low']] = \
         data[['Close', 'Open', 'High', 'Low']].applymap(lambda num: int(float(num.replace(',', ''))))
+
+    data = data[['Open', 'High', 'Low', 'Close']]
 
     if save_csv:
         data.to_csv(save_name)
 
-    return data
+
+    return
