@@ -233,5 +233,4 @@ def reformat_investing_com_data(data: pd.DataFrame,
     if save_csv:
         data.to_csv(save_name)
 
-
     return

@@ -12,7 +12,6 @@ def backtest_binary_predictions(historical_data: Union[np.ndarray, pd.DataFrame]
                                 transaction_fee: float = 1,
                                 overnight_holds: bool = False,
                                 decision_threshold: float = 0.5,):
-
     """
     Turns predicted values into binary values to create long or short signal to backtest. Only support 1 or -1 position.
 
@@ -44,13 +43,14 @@ def backtest_binary_predictions(historical_data: Union[np.ndarray, pd.DataFrame]
     if len(historical_data) != len(predictions):
         raise IndexError('Length of historical data unequals length of predictions')
 
-
     n = len(historical_data)
 
     # Convert raw predictions into binary predictions
     signals = np.vectorize(lambda x: 1 if x > decision_threshold else -1)(predictions)
 
     returns = np.array([signals[i] * historical_data[i] for i in range(n)])
+
+    balances = np.array()
 
     if is_futures:
         if overnight_holds:
@@ -61,4 +61,8 @@ def backtest_binary_predictions(historical_data: Union[np.ndarray, pd.DataFrame]
         if overnight_holds:
             pass
         else:
-            balances =
+            # Fees are incurred each day
+            fees = np.arange(transaction_fee, transaction_fee * (n+1), transaction_fee) * 2
+            balances = np.array([sum(returns[:i + 1]) for i in range(n)]) - fees + initial_balance
+
+    return balances
